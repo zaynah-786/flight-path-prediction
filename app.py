@@ -1,7 +1,7 @@
 
 import math
 import streamlit as st
-import airportsdata
+import airportsdata # library for airpoty data (specifically need IATA codes)
 
 # talib said this is the earth's radius
 earth_radius_km = 6378.0
@@ -39,33 +39,39 @@ def havershine_formula (latitude1, longitude1, latitude2, longitude2):
     distance = earth_radius_km*c
     return distance
 
+# function to calc flight time in hours 
 def flight_time(distance, speed):
     """Return flight time in hours given distance (km) and speed (km/h)."""
     return distance / speed
 
+
 if __name__ == "__main__":
     print("flight path prediction")
 
+# load airport data
     airports = airportsdata.load('IATA')
 
+# user inputs 
     dep = input("\nenter departure airport code (IATA, e.g. JFK): ").upper()
     arr = input("enter arrival airport code (IATA, e.g. LHR): ").upper()
 
+# check if code exists in airports data library or not
     if dep not in airports or arr not in airports:
         print("one or both airport codes not found in database.")
         exit()
-
+# get lat and lon for both aiports
     lat1, lon1 = airports[dep]['lat'], airports[dep]['lon']
     lat2, lon2 = airports[arr]['lat'], airports[arr]['lon']
-
+# display planes and allow user to choose
     print("\navailable planes:")
     for i, plane in enumerate(PLANES.keys(), 1):
         print(f"{i}. {plane}")
     choice = int(input("\nchoose a plane (number): "))
 
+# get selected plane and cruise speed
     plane_name = list(PLANES.keys())[choice-1]
     cruise = PLANES[plane_name]["cruise"]
-
+# calculating avg speed
     if isinstance(cruise, tuple):
         avg_speed = sum(cruise) / 2
         plane_speed = avg_speed
@@ -73,9 +79,10 @@ if __name__ == "__main__":
     else:
         plane_speed = cruise
 
+# calculate greatest circle distance + flight time
     distance = havershine_formula(lat1, lon1, lat2, lon2)
     time_hours = flight_time(distance, plane_speed)
-
+    
     print(f"\ndeparture: {dep} - {airports[dep]['name']}, {airports[dep]['country']}")
     print(f"arrival:   {arr} - {airports[arr]['name']}, {airports[arr]['country']}")
     print(f"great-circle distance: {distance:.2f} km")
