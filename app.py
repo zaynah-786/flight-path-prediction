@@ -1,4 +1,3 @@
-
 import math
 import streamlit as st
 import airportsdata # library for airpoty data (specifically need IATA codes)
@@ -45,37 +44,31 @@ def flight_time(distance, speed):
     return distance / speed
 
 
-if __name__ == "__main__":
-    print("flight path prediction")
-
 # load airport data
-    airports = airportsdata.load('IATA')
+airports = airportsdata.load('IATA')
 
 # user inputs 
-    dep = input("\nenter departure airport code (IATA, e.g. JFK): ").upper()
-    arr = input("enter arrival airport code (IATA, e.g. LHR): ").upper()
+dep = st.text_input("enter departure airport code (IATA, e.g. JFK)", "JFK").upper()
+arr = st.text_input("enter arrival airport code (IATA, e.g. LHR)", "LHR").upper()
 
 # check if code exists in airports data library or not
-    if dep not in airports or arr not in airports:
-        print("one or both airport codes not found in database.")
-        exit()
+if dep not in airports or arr not in airports:
+    st.write("one or both airport codes not found in database.")
+else:
 # get lat and lon for both aiports
     lat1, lon1 = airports[dep]['lat'], airports[dep]['lon']
     lat2, lon2 = airports[arr]['lat'], airports[arr]['lon']
+
 # display planes and allow user to choose
-    print("\navailable planes:")
-    for i, plane in enumerate(PLANES.keys(), 1):
-        print(f"{i}. {plane}")
-    choice = int(input("\nchoose a plane (number): "))
+    plane_name = st.selectbox("choose a plane", list(PLANES.keys()))
 
 # get selected plane and cruise speed
-    plane_name = list(PLANES.keys())[choice-1]
     cruise = PLANES[plane_name]["cruise"]
 # calculating avg speed
     if isinstance(cruise, tuple):
         avg_speed = sum(cruise) / 2
         plane_speed = avg_speed
-        print(f"\nusing average cruise speed: {avg_speed:.1f} km/h (range {cruise[0]:.0f}–{cruise[1]:.0f})")
+        st.write(f"using average cruise speed: {avg_speed:.1f} km/h (range {cruise[0]:.0f}–{cruise[1]:.0f})")
     else:
         plane_speed = cruise
 
@@ -83,7 +76,7 @@ if __name__ == "__main__":
     distance = havershine_formula(lat1, lon1, lat2, lon2)
     time_hours = flight_time(distance, plane_speed)
     
-    print(f"\ndeparture: {dep} - {airports[dep]['name']}, {airports[dep]['country']}")
-    print(f"arrival:   {arr} - {airports[arr]['name']}, {airports[arr]['country']}")
-    print(f"great-circle distance: {distance:.2f} km")
-    print(f"estimated flight time: {time_hours:.2f} hours at {plane_speed:.0f} km/h")
+    st.write(f"departure: {dep} - {airports[dep]['name']}, {airports[dep]['country']}")
+    st.write(f"arrival:   {arr} - {airports[arr]['name']}, {airports[arr]['country']}")
+    st.write(f"great-circle distance: {distance:.2f} km")
+    st.write(f"estimated flight time: {time_hours:.2f} hours at {plane_speed:.0f} km/h")
