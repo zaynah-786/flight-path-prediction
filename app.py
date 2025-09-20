@@ -1,6 +1,10 @@
 import math
 import streamlit as st
-import airportsdata # library for airpoty data (specifically need IATA codes)
+import airportsdata # library for airport data (specifically need IATA codes)
+
+@st.cache_data
+def load_airports_data():
+    return airportsdata.load('IATA')
 
 # talib said this is the earth's radius
 earth_radius_km = 6378.0
@@ -18,7 +22,7 @@ PLANES = {
 }
 
 # latitude and longitude in degrees
-def havershine_formula (latitude1, longitude1, latitude2, longitude2):
+def havershine_formula(latitude1, longitude1, latitude2, longitude2):
 # converting from degrees to radians
     lat1rad = math.radians(latitude1)
     lat2rad = math.radians(latitude2)
@@ -29,13 +33,13 @@ def havershine_formula (latitude1, longitude1, latitude2, longitude2):
     change_in_long = long2rad - long1rad
 
 # havershine formula 
-    a = math.sin(change_in_lat/2)**2 + (math.cos(lat1rad)*math.cos(lat2rad)) * math.sin(change_in_long/2)**2
+    a = math.sin(change_in_lat / 2)**2 + (math.cos(lat1rad) * math.cos(lat2rad)) * math.sin(change_in_long / 2)**2
 
 # central angle between the two points on the surface of the earth
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
  
 # distance
-    distance = earth_radius_km*c
+    distance = earth_radius_km * c
     return distance
 
 # function to calc flight time in hours 
@@ -43,18 +47,43 @@ def flight_time(distance, speed):
     """Return flight time in hours given distance (km) and speed (km/h)."""
     return distance / speed
 
+airports = load_airports_data()
 
-# load airport data
-airports = airportsdata.load('IATA')
+# Create a clean and searchable list of airport options
+airport_options = []
+for iata, data in airports.items():
+    city = data.get('city')
+    country = data.get('country')
+    airport_name = data['name']
+    
+    if city:
+        display_string = f"{iata} - {airport_name} ({city}, {country})"
+    else:
+        display_string = f"{iata} - {airport_name} ({country})"
+    
+    airport_options.append(display_string)
 
-# user inputs 
-dep = st.text_input("enter departure airport code (IATA, e.g. JFK)", "JFK").upper()
-arr = st.text_input("enter arrival airport code (IATA, e.g. LHR)", "LHR").upper()
+airport_options.sort()
+
+# user inputs using st.selectbox for search functionality
+dep_full_name = st.selectbox(
+    "choose departure airport", 
+    airport_options, 
+    index=None, 
+    placeholder="Search for an airport (e.g., LHR, London, Heathrow)"
+)
+arr_full_name = st.selectbox(
+    "choose arrival airport", 
+    airport_options, 
+    index=None, 
+    placeholder="Search for an airport (e.g., JFK, New York, Kennedy)"
+)
 
 # check if code exists in airports data library or not
-if dep not in airports or arr not in airports:
-    st.write("one or both airport codes not found in database.")
-else:
+if dep_full_name and arr_full_name:
+    dep = dep_full_name.split(' - ')[0]
+    arr = arr_full_name.split(' - ')[0]
+
 # get lat and lon for both aiports
     lat1, lon1 = airports[dep]['lat'], airports[dep]['lon']
     lat2, lon2 = airports[arr]['lat'], airports[arr]['lon']
@@ -80,3 +109,5 @@ else:
     st.write(f"arrival:   {arr} - {airports[arr]['name']}, {airports[arr]['country']}")
     st.write(f"great-circle distance: {distance:.2f} km")
     st.write(f"estimated flight time: {time_hours:.2f} hours at {plane_speed:.0f} km/h")
+else:
+    st.write("Please select both a departure and arrival airport.")
